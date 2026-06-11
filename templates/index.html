@@ -19,19 +19,53 @@
 
     <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="bg-indigo-600 p-2 rounded-lg text-white font-bold text-xl tracking-wider shadow-lg shadow-indigo-600/30">
-                    INDF
-                </div>
-                <div>
-                    <h1 class="text-lg font-bold tracking-tight text-white">Smart Forecast</h1>
-                    <p class="text-xs text-slate-400">PT Indofood Sukses Makmur Tbk</p>
-                </div>
+            
+            <!-- Logo + Company -->
+            <div class="flex items-center gap-3">
+                
+            <div class="w-11 h-11 bg-[#f5f8fc] rounded-xl p-1 shadow-lg shadow-indigo-500/20 flex items-center justify-center">
+                <img 
+                    src="{{ url_for('static', filename='indofood.png') }}" 
+                    alt="Indofood Logo"
+                    class="w-full h-full object-contain scale-115"
+                >
             </div>
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <span class="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-lg font-bold tracking-tight text-white">
+                            INDF Smart Forecast
+                        </h1>
+
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold 
+                            bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                            IDX
+                        </span>
+                    </div>
+
+                    <p class="text-xs text-slate-400">
+                        PT Indofood Sukses Makmur Tbk
+                    </p>
+                </div>
+
+            </div>
+
+
+            <!-- Backend Status -->
+            <span class="inline-flex items-center px-3 py-1 rounded-full 
+                text-xs font-medium 
+                bg-emerald-500/10 text-emerald-400 
+                border border-emerald-500/20
+                shadow-md shadow-emerald-500/10">
+
+                <span class="w-2 h-2 mr-2 rounded-full 
+                    bg-emerald-400 animate-pulse">
+                </span>
+
                 Flask Backend Connected
+
             </span>
+
         </div>
     </header>
 
