@@ -6,267 +6,201 @@
     <title>INDF Stock Forecasting Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700;800;900&family=JetBrains+Mono:wght=400;700&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #0f172a; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        /* --- DAFTAR VARIABEL WARNA (Premium Smooth Transition) --- */
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            transition: background-color 0.3s ease, color 0.3s ease;
+            /* Default Dark Mode Colors */
+            --bg-main: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.2);
+            --border-color: rgba(51, 65, 85, 0.8);
+            --bg-header: rgba(15, 23, 42, 0.5);
+            --bg-table-head: #1e293b;
+            --text-title: #ffffff;
+            --text-muted: #94a3b8;
+            background-color: var(--bg-main);
+        }
+
+        /* Aesthetics Light Mode */
+        body.light-mode {
+            --bg-main: #f8fafc;
+            --bg-card: rgba(255, 255, 255, 0.9);
+            --border-color: rgba(226, 232, 240, 0.9);
+            --bg-header: rgba(255, 255, 255, 0.7);
+            --bg-table-head: #f1f5f9;
+            --text-title: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Custom Dynamic Styles based on CSS variables */
+        .dynamic-bg-card { background-color: var(--bg-card); border-color: var(--border-color); }
+        .dynamic-border { border-color: var(--border-color); }
+        .dynamic-header { background-color: var(--bg-header); border-color: var(--border-color); }
+        .dynamic-text-title { color: var(--text-title); }
+        .dynamic-text-muted { color: var(--text-muted); }
+        .dynamic-table-head { background-color: var(--bg-table-head); }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: var(--bg-main); }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        body.light-mode ::-webkit-scrollbar-thumb { background: #cbd5e1; }
     </style>
 </head>
-<body class="text-slate-100 min-h-screen flex flex-col">
+<body class="text-slate-100 h-screen overflow-hidden flex flex-col">
 
-    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            
-            <!-- Logo + Company -->
-            <div class="flex items-center gap-3">
-                
-            <div class="w-11 h-11 bg-[#f5f8fc] rounded-xl p-1 shadow-lg shadow-indigo-500/20 flex items-center justify-center">
-                <img 
-                    src="{{ url_for('static', filename='indofood.png') }}" 
-                    alt="Indofood Logo"
-                    class="w-full h-full object-contain scale-115"
-                >
-            </div>
+    <div id="loadingOverlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex flex-col items-center justify-center space-y-4 transition-opacity duration-500">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        <p class="text-sm text-slate-400 font-medium">Memproses data bursa dan model machine learning...</p>
+    </div>
 
+    <header class="border-b dynamic-header backdrop-blur shrink-0 transition-colors duration-300">
+        <div class="max-w-[1600px] mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 bg-[#f5f8fc] rounded-xl p-1 shadow-md flex items-center justify-center">
+                    <img src="{{ url_for('static', filename='indofood.png') }}" alt="Indofood Logo" class="w-full h-full object-contain scale-110">
+                </div>
                 <div>
                     <div class="flex items-center gap-2">
-                        <h1 class="text-lg font-bold tracking-tight text-white">
-                            INDF Smart Forecast
-                        </h1>
-
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold 
-                            bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
-                            IDX
-                        </span>
+                        <h1 class="text-md font-bold tracking-tight dynamic-text-title">INDF Smart Forecast</h1>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">IDX</span>
                     </div>
-
-                    <p class="text-xs text-slate-400">
-                        PT Indofood Sukses Makmur Tbk
-                    </p>
+                    <p class="text-[11px] dynamic-text-muted">PT Indofood Sukses Makmur Tbk</p>
                 </div>
 
+                <button id="themeToggle" class="ml-2 p-2 rounded-xl bg-slate-800/50 body.light-mode:bg-slate-200 border dynamic-border hover:scale-105 transition-all text-amber-400 dark:text-indigo-300">
+                    <svg id="sunIcon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.243 17.657l.707.707M7.343 6.364l.707.707M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <svg id="moonIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                </button>
             </div>
 
-
-            <!-- Backend Status -->
-            <span class="inline-flex items-center px-3 py-1 rounded-full 
-                text-xs font-medium 
-                bg-emerald-500/10 text-emerald-400 
-                border border-emerald-500/20
-                shadow-md shadow-emerald-500/10">
-
-                <span class="w-2 h-2 mr-2 rounded-full 
-                    bg-emerald-400 animate-pulse">
-                </span>
-
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shadow-sm shadow-emerald-500/5">
+                <span class="w-2 h-2 mr-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 Flask Backend Connected
-
             </span>
-
         </div>
     </header>
 
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <main class="flex-1 max-w-[1600px] w-full mx-auto px-6 py-4 flex flex-col space-y-4 min-h-0">
         
-        <div id="loadingOverlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex flex-col items-center justify-center space-y-4 transition-opacity duration-500">
-            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
-            <p class="text-sm text-slate-400 font-medium">Memproses data bursa dan model machine learning...</p>
-        </div>
-
-        {% if prediction %}
-        <div class="bg-indigo-600/20 border border-indigo-500/40 p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl shadow-indigo-950/50 animate-fade-in">
-            <div class="flex items-center space-x-4">
-                <div class="p-3 bg-indigo-600 rounded-xl text-white hidden md:block">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold text-white tracking-tight">Hasil Prediksi Harga Esok Hari</h3>
-                    <p class="text-sm text-slate-400">Berhasil dieksekusi real-time via model hibrida sekuensial bursa.</p>
-                </div>
-            </div>
-            <div class="text-3xl font-black text-indigo-400 bg-slate-900 px-6 py-3 rounded-xl border border-indigo-500/20 font-mono">
-                Rp {{ prediction }}
-            </div>
-        </div>
-        {% endif %}
-
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-slate-800/40 p-6 rounded-2xl border border-slate-800">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 dynamic-bg-card p-4 rounded-xl border shrink-0 transition-colors duration-300">
             <div>
-                <h2 class="text-xl font-bold text-white tracking-tight">Proyeksi Tren Pergerakan Harga</h2>
-                <p class="text-xs text-slate-400 mt-1">Visualisasi gabungan 30 hari data historis bursa dan 30 hari proyeksi lini masa model.</p>
+                <h2 class="text-lg font-bold dynamic-text-title tracking-tight">Proyeksi Tren Pergerakan Harga</h2>
+                <p class="text-xs dynamic-text-muted">Visualisasi gabungan 30 hari data historis dan 30 hari proyeksi model.</p>
             </div>
             
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div class="flex items-center gap-3">
                 <form action="/predict" method="get" class="flex items-stretch">
-                    <button type="submit" class="w-full bg-slate-900 hover:bg-slate-950 text-indigo-400 border border-indigo-500/30 hover:border-indigo-500 font-semibold px-5 py-3 rounded-xl transition-all shadow-md text-sm flex items-center justify-center space-x-2">
-                        <svg class="w-4 h-4 text-indigo-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2 rounded-xl transition-all text-xs flex items-center space-x-2 shadow-md shadow-indigo-500/10">
+                        <svg class="w-4 h-4 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                         <span>Predict Besok (1-Day)</span>
                     </button>
                 </form>
 
-                <div class="relative min-w-[280px] group">
-                    <select 
-                    id="modelSelector"
-                    class="
-                        appearance-none
-                        w-full 
-                        bg-slate-900/80 
-                        backdrop-blur-md
-                        border border-slate-700/70
-                        rounded-2xl 
-                        px-5 py-3.5
-                        pr-12
-                        text-sm 
-                        font-semibold 
-                        text-slate-100
-                        shadow-lg shadow-black/30
-                        transition-all duration-300
-                        hover:border-indigo-500/50
-                        hover:shadow-indigo-500/20
-                        focus:outline-none
-                        focus:ring-2
-                        focus:ring-indigo-500/40
-                        focus:border-indigo-400
-                        cursor-pointer
-                    ">
+                <div class="relative min-w-[240px]">
+                    <select id="modelSelector" class="appearance-none w-full bg-slate-800/40 body.light-mode:bg-white border dynamic-border rounded-xl px-4 py-2 pr-10 text-xs font-semibold dynamic-text-title shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 cursor-pointer transition-colors duration-300">
                         <option value="TCN-BiGRU (Rp)">TCN-BiGRU</option>
                         <option value="TCN (Rp)">TCN</option>
                         <option value="BiGRU (Rp)">BiGRU</option>
-
                         <option value="Informer CNN LSTM (Rp)">Informer-CNN-LSTM</option>
                         <option value="Informer CNN (Rp)">Informer-CNN</option>
                         <option value="Informer_LSTM (Rp)">Informer-LSTM</option>
                         <option value="CNN (Rp)">CNN (Rani)</option>
                         <option value="Informer (Rp)">Informer</option>                        
                         <option value="LSTM (Rp)">LSTM</option>
-
                         <option value="Hybrid BiLSTM CNN (Rp)">BiLSTM-CNN</option>
                         <option value="BiLSTM (Rp)">BiLSTM</option>
                         <option value="CNN BiLSTM (Rp)">CNN (Ghina)</option>
-
                     </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 dynamic-text-muted">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-slate-800/30 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
-                <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Harga Aktual Terakhir</span>
-                <div class="mt-2 flex items-baseline justify-between">
-                    <span class="text-2xl font-bold text-white" id="lastActualPrice">Rp-</span>
-                    <span class="text-xs text-slate-500 font-medium" id="lastActualDate">-</span>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+            <div class="dynamic-bg-card border p-4 rounded-xl flex flex-col justify-between transition-colors duration-300">
+                <span class="text-[10px] font-medium dynamic-text-muted uppercase tracking-wider">Harga Aktual Terakhir</span>
+                <div class="mt-1 flex items-baseline justify-between gap-2 flex-wrap">
+                    <span class="text-xl font-bold dynamic-text-title font-mono" id="lastActualPrice">Rp-</span>
+                    <span class="text-[11px] dynamic-text-muted font-medium" id="lastActualDate">-</span>
                 </div>
             </div>
-            <div class="bg-slate-800/30 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
-                <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Target Akhir Proyeksi (H+30)</span>
-                <div class="mt-2 flex items-baseline justify-between">
-                    <span class="text-2xl font-bold text-indigo-400" id="targetPrice">Rp-</span>
-                    <span class="text-xs text-slate-500 font-medium" id="targetDate">-</span>
+            <div class="dynamic-bg-card border p-4 rounded-xl flex flex-col justify-between transition-colors duration-300">
+                <span class="text-[10px] font-medium dynamic-text-muted uppercase tracking-wider">Target Akhir Proyeksi (H+30)</span>
+                <div class="mt-1 flex items-baseline justify-between gap-2 flex-wrap">
+                    <span class="text-xl font-bold text-indigo-500 font-mono" id="targetPrice">Rp-</span>
+                    <span class="text-[11px] dynamic-text-muted font-medium" id="targetDate">-</span>
                 </div>
             </div>
-            <div class="bg-slate-800/30 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
-                <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Estimasi Pertumbuhan</span>
-                <div class="mt-2 flex items-baseline justify-between">
-                    <span class="text-2xl font-bold" id="growthPct">-%</span>
-                    <span class="text-xs px-2 py-0.5 rounded font-medium shadow-sm" id="growthBadge">-</span>
+            <div class="dynamic-bg-card border p-4 rounded-xl flex flex-col justify-between transition-colors duration-300">
+                <span class="text-[10px] font-medium dynamic-text-muted uppercase tracking-wider">Estimasi Pertumbuhan</span>
+                <div class="mt-1 flex items-baseline justify-between gap-2 flex-wrap">
+                    <span class="text-xl font-bold font-mono" id="growthPct">-%</span>
+                    <span class="text-[10px] px-2 py-0.5 rounded font-semibold shadow-sm" id="growthBadge">-</span>
                 </div>
             </div>
-            <div class="bg-slate-800/30 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between">
-                <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Nilai Proyeksi Tertinggi</span>
-                <div class="mt-2 flex items-baseline justify-between">
-                    <span class="text-2xl font-bold text-emerald-400" id="maxPrice">Rp-</span>
-                    <span class="text-xs text-slate-500 font-medium">Maksimum</span>
+            <div class="dynamic-bg-card border p-4 rounded-xl flex flex-col justify-between transition-colors duration-300">
+                <span class="text-[10px] font-medium dynamic-text-muted uppercase tracking-wider">Nilai Proyeksi Tertinggi</span>
+                <div class="mt-1 flex items-baseline justify-between gap-2 flex-wrap">
+                    <span class="text-xl font-bold text-emerald-500 font-mono" id="maxPrice">Rp-</span>
+                    <span class="text-[11px] dynamic-text-muted font-medium">Maksimum</span>
                 </div>
             </div>
         </div>
 
-        <div class="bg-slate-800/20 border border-slate-800 p-6 rounded-3xl shadow-2xl backdrop-blur-sm">
-            <div class="flex items-center justify-between mb-6">
-                <div class="flex items-center space-x-4">
-                    <div class="flex items-center space-x-2">
-                        <span class="w-3 h-3 rounded-full bg-slate-400 inline-block"></span>
-                        <span class="text-xs text-slate-300 font-medium">Data Aktual (30 Hari Terakhir)</span>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <span class="w-3 h-3 rounded-full inline-block transition-colors duration-300" id="chartLegendDot"></span>
-                        <span class="text-xs text-slate-300 font-medium">Garis Proyeksi <span id="chartLegendName" class="font-bold"></span></span>
+        <div class="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-0">
+            
+            <div class="lg:col-span-3 dynamic-bg-card border p-5 rounded-xl flex flex-col min-h-0 transition-colors duration-300">
+                <div class="flex items-center justify-between mb-4 shrink-0">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block"></span>
+                            <span class="text-xs dynamic-text-muted font-medium">Data Aktual (30 Hari Terakhir)</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="w-2.5 h-2.5 rounded-full inline-block transition-colors duration-300" id="chartLegendDot"></span>
+                            <span class="text-xs dynamic-text-muted font-medium">Garis Proyeksi <span id="chartLegendName" class="font-bold"></span></span>
+                        </div>
                     </div>
                 </div>
+                <div class="flex-1 relative min-h-0 w-full">
+                    <canvas id="forecastChart"></canvas>
+                </div>
             </div>
-            <div class="relative h-[400px] w-full">
-                <canvas id="forecastChart"></canvas>
-            </div>
-        </div>
 
-        <div class="bg-slate-800/20 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-            <div class="px-6 py-4 border-b border-slate-800 bg-slate-800/50 flex items-center justify-between">
-                <h3 class="font-bold text-white text-md">Tabel Angka Hasil Proyeksi 30 Hari Kerja Bursa</h3>
-                <span 
-                class="
-                inline-flex items-center gap-2
-                px-3 py-1.5
-                rounded-full
-                bg-gradient-to-r from-purple-500/15 to-indigo-500/15
-                border border-purple-500/30
-                text-purple-300
-                text-xs font-semibold
-                ">
-                💰 Currency: IDR (Rp)
-                </span>
+            <div class="lg:col-span-1 dynamic-bg-card border rounded-xl flex flex-col min-h-0 transition-colors duration-300">
+                <div class="px-3 py-3 border-b dynamic-table-head flex items-center justify-between shrink-0 transition-colors duration-300">
+                    <h3 class="font-bold dynamic-text-title text-[10px] tracking-wider uppercase">Angka Hasil Proyeksi 30 Hari</h3>
+                    <span class="px-1.5 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-500 text-[9px] font-bold">
+                        IDR
+                    </span>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto min-h-0">
+                    <table class="w-full text-left border-collapse table-fixed">
+                        <thead class="sticky top-0 z-10 dynamic-table-head shadow-sm transition-colors duration-300">
+                            <tr class="text-[9px] font-bold uppercase tracking-wider border-b dynamic-border text-slate-400">
+                                <th class="w-10 px-2 py-2 text-center">#</th>
+                                <th class="w-24 px-1 py-2 text-left">Tanggal</th>
+                                <th class="px-2 py-2 text-right">Proyeksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="forecastTableBody" class="text-[10px] divide-y dynamic-border font-medium dynamic-text-muted">
+                            </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="overflow-x-auto max-h-96">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-900/60 text-slate-400 text-xs font-semibold uppercase border-b border-slate-800">
-                            <thead>
-                                <tr class="
-                                    bg-gradient-to-r from-slate-900/90 to-slate-800/80
-                                    text-slate-300
-                                    text-xs 
-                                    font-bold 
-                                    uppercase 
-                                    tracking-wider
-                                    border-b 
-                                    border-indigo-500/20
-                                ">
-                                    <th class="px-6 py-4 text-left">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-indigo-400">#</span>
-                                            <span>Hari Ke-</span>
-                                        </div>
-                                    </th>
 
-                                    <th class="px-6 py-4 text-left">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-cyan-400">📅</span>
-                                            <span>Tanggal</span>
-                                        </div>
-                                    </th>
-
-                                    <th class="px-6 py-4 text-right">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-emerald-400">💹</span>
-                                            <span>Nilai Proyeksi Model</span>
-                                        </div>
-                                    </th>
-                                </tr>
-                            </thead>
-                        </tr>
-                    </thead>
-                    <tbody id="forecastTableBody" class="text-sm divide-y divide-slate-800/60 font-medium">
-                        </tbody>
-                </table>
-            </div>
         </div>
     </main>
 
-    <footer class="border-t border-slate-800 bg-slate-950 py-4 text-center text-xs text-slate-500 mt-12">
+    <footer class="border-t dynamic-header text-center py-3 text-[11px] dynamic-text-muted shrink-0 transition-colors duration-300">
         &copy; 2026 PT Indofood Sukses Makmur Tbk — Financial Machine Learning Forecasting System.
     </footer>
 
@@ -280,84 +214,57 @@
         let forecastChart;
 
         const themeConfig = {
-            'TCN-BiGRU (Rp)': {
-                color: '#818cf8',
-                dotClass: 'bg-indigo-400',
-                name: 'Hybrid TCN-BiGRU'
-            },
-
-            'TCN (Rp)': {
-                color: '#22d3ee',
-                dotClass: 'bg-cyan-400',
-                name: 'TCN'
-            },
-
-            'BiGRU (Rp)': {
-                color: '#f43f5e',
-                dotClass: 'bg-rose-500',
-                name: 'BiGRU'
-            },
-
-            'Informer CNN LSTM (Rp)': {
-                color: '#10b981',
-                dotClass: 'bg-emerald-400',
-                name: 'Hybrid Informer-CNN-LSTM'
-            },
-
-            'Informer CNN (Rp)': {
-                color: '#06b6d4',
-                dotClass: 'bg-cyan-400',
-                name: 'Informer-CNN'
-            },
-
-            'CNN (Rp)': {
-                color: '#f59e0b',
-                dotClass: 'bg-amber-400',
-                name: 'CNN'
-            },
-
-            'Informer (Rp)': {
-                color: '#8b5cf6',
-                dotClass: 'bg-violet-400',
-                name: 'Informer'
-            },
-
-            'Informer_LSTM (Rp)': {
-                color: '#ec4899',
-                dotClass: 'bg-pink-400',
-                name: 'Informer-LSTM'
-            },
-
-            'LSTM (Rp)': {
-                color: '#84cc16',
-                dotClass: 'bg-lime-400',
-                name: 'LSTM'
-            },
-
-            'Hybrid BiLSTM CNN (Rp)': {
-                color: '#3b82f6',
-                dotClass: 'bg-blue-400',
-                name: 'Hybrid BiLSTM-CNN'
-            },
-
-            'BiLSTM (Rp)': {
-                color: '#ef4444',
-                dotClass: 'bg-red-400',
-                name: 'BiLSTM'
-            },
-
-            'CNN BiLSTM (Rp)': {
-                color: '#14b8a6',
-                dotClass: 'bg-teal-400',
-                name: 'CNN BiLSTM'
-            }
+            'TCN-BiGRU (Rp)': { color: '#6366f1', dotClass: 'bg-indigo-500', name: 'Hybrid TCN-BiGRU' },
+            'TCN (Rp)': { color: '#06b6d4', dotClass: 'bg-cyan-500', name: 'TCN' },
+            'BiGRU (Rp)': { color: '#f43f5e', dotClass: 'bg-rose-500', name: 'BiGRU' },
+            'Informer CNN LSTM (Rp)': { color: '#10b981', dotClass: 'bg-emerald-500', name: 'Hybrid Informer-CNN-LSTM' },
+            'Informer CNN (Rp)': { color: '#0891b2', dotClass: 'bg-cyan-600', name: 'Informer-CNN' },
+            'CNN (Rp)': { color: '#d97706', dotClass: 'bg-amber-600', name: 'CNN' },
+            'Informer (Rp)': { color: '#7c3aed', dotClass: 'bg-violet-600', name: 'Informer' },
+            'Informer_LSTM (Rp)': { color: '#db2777', dotClass: 'bg-pink-600', name: 'Informer-LSTM' },
+            'LSTM (Rp)': { color: '#65a30d', dotClass: 'bg-lime-600', name: 'LSTM' },
+            'Hybrid BiLSTM CNN (Rp)': { color: '#2563eb', dotClass: 'bg-blue-600', name: 'Hybrid BiLSTM-CNN' },
+            'BiLSTM (Rp)': { color: '#dc2626', dotClass: 'bg-red-600', name: 'BiLSTM' },
+            'CNN BiLSTM (Rp)': { color: '#0d9488', dotClass: 'bg-teal-600', name: 'CNN BiLSTM' }
         };
+
+        // --- SISTEM TOGGLE LIGHT/DARK MODE ---
+        const themeToggleBtn = document.getElementById('themeToggle');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+
+        themeToggleBtn.addEventListener('click', () => {
+            const isLight = document.body.classList.toggle('light-mode');
+            
+            // Ubah Icon Switcher
+            if (isLight) {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+                document.body.classList.remove('text-slate-100');
+                document.body.classList.add('text-slate-800');
+            } else {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+                document.body.classList.remove('text-slate-800');
+                document.body.classList.add('text-slate-100');
+            }
+            
+            // Re-render Chart grid lines agar adaptif dengan tema baru
+            if (forecastChart) {
+                const gridColor = isLight ? '#e2e8f0' : '#1e293b';
+                const tickColor = isLight ? '#64748b' : '#475569';
+                forecastChart.options.scales.x.grid.color = gridColor;
+                forecastChart.options.scales.y.grid.color = gridColor;
+                forecastChart.options.scales.x.ticks.color = tickColor;
+                forecastChart.options.scales.y.ticks.color = tickColor;
+                forecastChart.update();
+            }
+        });
 
         function getModelValue(row, model) {
             return parseFloat(row[model]);
         }
 
-        // Ambil data JSON dari Flask Route /api/data
         async function initDashboard() {
             try {
                 const response = await fetch("/api/data");
@@ -375,7 +282,7 @@
                 lastActualPrice = actualData[actualData.length - 1].harga;
                 lastActualDate = actualData[actualData.length - 1].tgl;
 
-                document.getElementById('lastActualPrice').innerText = 'Rp' + lastActualPrice.toLocaleString('id-ID');
+                document.getElementById('lastActualPrice').innerText = 'Rp ' + lastActualPrice.toLocaleString('id-ID');
                 document.getElementById('lastActualDate').innerText = formatDate(lastActualDate);
 
                 labels = [
@@ -387,31 +294,25 @@
                 buildChart();
                 updateModelView('TCN-BiGRU (Rp)');
 
-                // Matikan layar loading overlay
                 document.getElementById('loadingOverlay').classList.add('opacity-0', 'pointer-events-none');
             } catch (error) {
                 console.error("Gagal sinkronisasi data API Flask:", error);
-                alert("Gagal memuat data dari endpoint Flask. Pastikan server python Anda berjalan.");
             }
         }
 
         function generateForecastSeries(model) {
             return labels.map((tgl, idx) => {
-
-                if(idx < actualData.length-1)
-                    return null;
-
-                if(idx === actualData.length-1)
-                    return lastActualPrice;
-
+                if(idx < actualData.length-1) return null;
+                if(idx === actualData.length-1) return lastActualPrice;
                 let row = forecastData[idx - actualData.length];
-
                 return getModelValue(row, model);
             });
         }
 
         function buildChart() {
             const ctx = document.getElementById('forecastChart').getContext('2d');
+            const isLight = document.body.classList.contains('light-mode');
+            
             forecastChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -423,7 +324,6 @@
                             borderColor: '#94a3b8',
                             borderWidth: 2,
                             pointRadius: 0,
-                            pointHoverRadius: 4,
                             fill: false,
                             tension: 0.15
                         },
@@ -431,10 +331,9 @@
                             label: 'Nilai Proyeksi Masa Depan',
                             data: generateForecastSeries('TCN-BiGRU (Rp)'),
                             borderColor: themeConfig['TCN-BiGRU (Rp)'].color,
-                            borderWidth: 3,
-                            borderDash: [5, 5],
+                            borderWidth: 2.5,
+                            borderDash: [4, 4],
                             pointRadius: 0,
-                            pointHoverRadius: 5,
                             fill: false,
                             tension: 0.1
                         }
@@ -443,24 +342,12 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            backgroundColor: '#1e293b',
-                            titleColor: '#94a3b8',
-                            bodyColor: '#f8fafc',
-                            borderColor: '#334155',
-                            borderWidth: 1,
-                            padding: 12
-                        }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
-                        x: { grid: { color: '#1e293b', drawBorder: false }, ticks: { color: '#64748b', maxTicksLimit: 12 } },
+                        x: { grid: { color: isLight ? '#e2e8f0' : '#1e293b', drawBorder: false }, ticks: { color: '#64748b', maxTicksLimit: 8, font: { size: 10 } } },
                         y: {
-                            grid: { color: '#1e293b', drawBorder: false },
-                            ticks: { color: '#64748b', callback: function(v) { return 'Rp' + v.toLocaleString('id-ID'); } }
+                            grid: { color: isLight ? '#e2e8f0' : '#1e293b', drawBorder: false },
+                            ticks: { color: '#64748b', font: { size: 10 }, callback: function(v) { return 'Rp' + v.toLocaleString('id-ID'); } }
                         }
                     }
                 }
@@ -468,34 +355,31 @@
         }
 
         function updateModelView(selectedModel) {
-            let values = forecastData.map(
-                row => getModelValue(row, selectedModel)
-            );
-
+            let values = forecastData.map(row => getModelValue(row, selectedModel));
             const finalPrice = values[values.length - 1];
             const maxPrice = Math.max(...values);
             const growth = ((finalPrice - lastActualPrice) / lastActualPrice) * 100;
 
-            document.getElementById('targetPrice').innerText = 'Rp' + finalPrice.toLocaleString('id-ID');
+            document.getElementById('targetPrice').innerText = 'Rp ' + finalPrice.toLocaleString('id-ID');
             document.getElementById('targetDate').innerText = formatDate(forecastData[forecastData.length - 1]["Tanggal"]);
-            document.getElementById('maxPrice').innerText = 'Rp' + maxPrice.toLocaleString('id-ID');
+            document.getElementById('maxPrice').innerText = 'Rp ' + maxPrice.toLocaleString('id-ID');
             
             const growthEl = document.getElementById('growthPct');
             const badgeEl = document.getElementById('growthBadge');
             
             growthEl.innerText = (growth >= 0 ? '+' : '') + growth.toFixed(2) + '%';
             if (growth >= 0) {
-                growthEl.className = "text-2xl font-bold text-emerald-400";
-                badgeEl.innerText = "Bullish Trend";
-                badgeEl.className = "text-xs px-2 py-0.5 rounded font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                growthEl.className = "text-xl font-bold text-emerald-500 font-mono";
+                badgeEl.innerText = "Bullish";
+                badgeEl.className = "text-[9px] px-2 py-0.5 rounded font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20";
             } else {
-                growthEl.className = "text-2xl font-bold text-rose-400";
-                badgeEl.innerText = "Bearish Trend";
-                badgeEl.className = "text-xs px-2 py-0.5 rounded font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20";
+                growthEl.className = "text-xl font-bold text-rose-500 font-mono";
+                badgeEl.innerText = "Bearish";
+                badgeEl.className = "text-[9px] px-2 py-0.5 rounded font-semibold bg-rose-500/10 text-rose-500 border border-rose-500/20";
             }
 
             const config = themeConfig[selectedModel];
-            document.getElementById('chartLegendDot').className = `w-3 h-3 rounded-full inline-block ${config.dotClass}`;
+            document.getElementById('chartLegendDot').className = `w-2.5 h-2.5 rounded-full inline-block ${config.dotClass}`;
             const nameLabel = document.getElementById('chartLegendName');
             nameLabel.innerText = config.name;
             nameLabel.style.color = config.color;
@@ -504,55 +388,27 @@
             forecastChart.data.datasets[1].borderColor = config.color;
             forecastChart.update();
 
-            // Render isi baris tabel bawah
             const tableBody = document.getElementById('forecastTableBody');
             tableBody.innerHTML = '';
+            
             forecastData.forEach(row => {
-                // Render isi baris tabel bawah
-                const tableBody = document.getElementById("forecastTableBody");
-
-                tableBody.innerHTML = "";
-
-                forecastData.forEach(row => {
-
-                    const value = getModelValue(row, selectedModel);
-
-                    const tr = document.createElement("tr");
-
-                    tr.className =
-                        "hover:bg-slate-800/30 transition-colors";
-
-                    tr.innerHTML = `
-                        <td class="px-6 py-3 text-slate-500 font-mono">
-                            ${row["Hari Ke-"]}
-                        </td>
-
-                        <td class="px-6 py-3 text-slate-300">
-                            ${formatDate(row["Tanggal"])}
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <div class="flex items-center gap-2">
-                                <span class="text-white font-bold">
-                                    Rp ${value.toLocaleString("id-ID")}
-                                </span>
-                            </div>
-                        </td>
-                    `;
-
-                    tableBody.appendChild(tr);
-
-                });
+                const value = getModelValue(row, selectedModel);
+                const tr = document.createElement("tr");
+                tr.className = "hover:bg-slate-500/5 transition-colors border-b dynamic-border";
+                tr.innerHTML = `
+                    <td class="px-2 py-1.5 text-center text-slate-400 font-mono">${row["Hari Ke-"]}</td>
+                    <td class="px-1 py-1.5 dynamic-text-title">${formatDate(row["Tanggal"])}</td>
+                    <td class="px-2 py-1.5 text-right font-bold dynamic-text-title font-mono">Rp ${value.toLocaleString("id-ID")}</td>
+                `;
+                tableBody.appendChild(tr);
             });
         }
-        // Helper format tanggal seragam (Bahasa Indonesia)
+
         function formatDate(dateString) {
             if (!dateString) return "-";
-            // Memastikan string tanggal ISO YYYY-MM-DD dibaca dengan benar oleh semua browser
             const dateObj = new Date(dateString);
-            if (isNaN(dateObj.getTime())) return dateString; // Jika gagal parsing, kembalikan teks aslinya
-            
-            const options = { day: 'numeric', month: 'short', year: 'numeric' };
-            return dateObj.toLocaleDateString('id-ID', options);
+            if (isNaN(dateObj.getTime())) return dateString;
+            return dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
         }
 
         document.getElementById('modelSelector').addEventListener('change', (e) => updateModelView(e.target.value));
