@@ -265,40 +265,40 @@
             return parseFloat(row[model]);
         }
 
-        async function initDashboard() {
-            try {
-                const response = await fetch("/api/data");
-                const result = await response.json();
+async function initDashboard() {
+    try {
+        const response = await fetch("/api/data");
+        const result = await response.json();
 
-                if (result.status !== "success") throw new Error(result.message);
+        if (result.status !== "success") throw new Error(result.message);
 
-                actualData = result.historical.map(row => ({
-                    tgl: row.Tanggal,
-                    harga: parseInt(row.Terakhir)
-                }));
+        actualData = result.historical.map(row => ({
+            tgl: row.Tanggal,
+            harga: parseInt(row.Terakhir)
+        }));
 
-                forecastData = result.forecast;
+        forecastData = result.forecast;
 
-                lastActualPrice = actualData[actualData.length - 1].harga;
-                lastActualDate = actualData[actualData.length - 1].tgl;
+        lastActualPrice = actualData[actualData.length - 1].harga;
+        lastActualDate = actualData[actualData.length - 1].tgl;
 
-                document.getElementById('lastActualPrice').innerText = 'Rp ' + lastActualPrice.toLocaleString('id-ID');
-                document.getElementById('lastActualDate').innerText = formatDate(lastActualDate);
+        document.getElementById('lastActualPrice').innerText = 'Rp ' + lastActualPrice.toLocaleString('id-ID');
+        document.getElementById('lastActualDate').innerText = formatDate(lastActualDate);
 
-                labels = [
-                    ...actualData.map(d => d.tgl),
-                    ...forecastData.map(row => row["Tanggal"])
-                ];
-                actualPrices = labels.map((tgl, idx) => idx < actualData.length ? actualData[idx].harga : null);
+        labels = [
+            ...actualData.map(d => d.tgl),
+            ...forecastData.map(row => row["Tanggal"])
+        ];
+        actualPrices = labels.map((tgl, idx) => idx < actualData.length ? actualData[idx].harga : null);
 
-                buildChart();
-                updateModelView('TCN-BiGRU (Rp)');
+        buildChart();
+        updateModelView('TCN-BiGRU (Rp)');
 
-                document.getElementById('loadingOverlay').classList.add('opacity-0', 'pointer-events-none');
-            } catch (error) {
-                console.error("Gagal sinkronisasi data API Flask:", error);
-            }
-        }
+        document.getElementById('loadingOverlay').classList.add('opacity-0', 'pointer-events-none');
+    } catch (error) {
+        console.error("Gagal sinkronisasi data API Flask:", error);
+    }
+}
 
         function generateForecastSeries(model) {
             return labels.map((tgl, idx) => {
